@@ -32,18 +32,22 @@ public class UserRealm extends AuthorizingRealm {
     }
 
     @Override
-    protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken token) throws AuthenticationException {
+    protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken tokenq) throws AuthenticationException {
 
-//    	UsernamePasswordToken  token = (UsernamePasswordToken) tokenq;  
+    	UsernamePasswordToken  token = (UsernamePasswordToken) tokenq;  
         String username = (String)token.getPrincipal();
         User user = null;
         if(username.trim().equalsIgnoreCase("no")){
-            String [] tokenCredentials =  (String[]) token.getCredentials(); 
-        	user = userService.findByNo(tokenCredentials[0]);
+            char [] credentials = (char [])token.getCredentials();
+            String str = "";
+            for (int i = 0; i < credentials.length; i++) {
+				str+=credentials[i];
+			}
+        	user = userService.findByNo(str);
+        	token.setPassword(user.getPassword().toCharArray());
         }else{
         	user = userService.findByUsername(username);
         }
-
         if(user == null) {
             throw new UnknownAccountException();//没找到帐号
         }
@@ -51,7 +55,7 @@ public class UserRealm extends AuthorizingRealm {
         if(Boolean.TRUE.equals(user.getLocked())) {
             throw new LockedAccountException(); //帐号锁定
         }
-
+ 
         //交给AuthenticatingRealm使用CredentialsMatcher进行密码匹配，如果觉得人家的不好可以自定义实现
         SimpleAuthenticationInfo authenticationInfo = new SimpleAuthenticationInfo(
                 user.getUsername(), //用户名
